@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow เคลมผู้ขาย (Supplier Claim)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f6f3; --surface:#fff; --surface-2:#f0f0ec; --text:#1c1c1f; --muted:#5f6068; --border:#dddcd6;
+  --qa:#0e7490; --qa-soft:#d8eef3;
+  --qc:#6d3fd1; --qc-soft:#e9e1fb;
+  --wh:#a85a06; --wh-soft:#fbecd6;
+  --pu:#157a3c; --pu-soft:#ddf2e4;
+  --sys:#44464f; --sys-soft:#e6e6e2;
+  --ac:#b42358; --ac-soft:#fbe1ea;
+  --bad:#b42323; --bad-soft:#fbe3e3;
+  --claim:#1d4ed8; --claim-soft:#dfe8fd;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131315; --surface:#1c1c1f; --surface-2:#232327; --text:#ececee; --muted:#a3a3ad; --border:#34343a;
+    --qa:#3cc4dc; --qa-soft:#123a43; --qc:#a98bfa; --qc-soft:#2c2347; --wh:#f2b449; --wh-soft:#3d2c10;
+    --pu:#4fd07f; --pu-soft:#173826; --sys:#c4c5cc; --sys-soft:#2a2a2f; --ac:#f47aa5; --ac-soft:#40192a;
+    --bad:#f17c7c; --bad-soft:#421f1f; --claim:#7ea6ff; --claim-soft:#1a2747;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.6 "IBM Plex Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif}
+main{max-width:1320px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:26px;line-height:1.3;margin:0 0 6px}
+h2{font-size:19px;margin:40px 0 6px}
+p.lead{color:var(--muted);margin:0 0 14px;max-width:960px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px;max-width:980px}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
+
+/* role chips */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.r{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+.r.qa{color:var(--qa);background:var(--qa-soft)}
+.r.qc{color:var(--qc);background:var(--qc-soft)}
+.r.wh{color:var(--wh);background:var(--wh-soft)}
+.r.pu{color:var(--pu);background:var(--pu-soft)}
+.r.sys{color:var(--sys);background:var(--sys-soft)}
+.r.ac{color:var(--ac);background:var(--ac-soft)}
+
+/* big flow */
+.flow{display:grid;grid-template-columns:minmax(0,1.15fr) 44px minmax(0,1fr) 44px minmax(0,1.25fr);align-items:start;margin-top:14px}
+.zone{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.zone>h3{margin:0 0 2px;font-size:16px}
+.zone>.zsub{color:var(--muted);font-size:13px;margin:0 0 12px}
+.zone.claim{border:2px solid var(--claim);background:linear-gradient(var(--claim-soft),var(--surface) 140px)}
+.bigarrow{display:flex;align-items:center;justify-content:center;align-self:stretch;color:var(--muted);font-size:28px}
+.bigarrow span{position:sticky;top:45vh}
+
+.path{border:1px solid var(--border);border-radius:12px;padding:10px 10px 12px;background:var(--surface-2);margin-bottom:12px}
+.path:last-child{margin-bottom:0}
+.path>.ph{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:700;font-size:14.5px}
+.tag{font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 10px;position:relative}
+.step .t{font-weight:600}
+.step .d{color:var(--muted);font-size:13px;margin-top:2px}
+.step.out{border:2px solid var(--claim);background:var(--claim-soft)}
+.step.out .t{color:var(--claim)}
+.step.stop{border-style:dashed}
+.down{text-align:center;color:var(--muted);line-height:1;font-size:15px;margin:3px 0}
+.menu{font-size:12px;color:var(--muted);font-family:ui-monospace,Consolas,monospace}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px;padding-left:10px;border-left:3px solid var(--border)}
+.note.bad{border-left-color:var(--bad)}
+
+/* claim document parts */
+.part{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:8px}
+.part .pt{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px;margin-bottom:3px}
+.part ul{margin:2px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.part ul li{margin:1px 0}
+.status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:4px 0 12px;font-size:13px}
+.st{font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface)}
+.st.p{color:var(--wh);border-color:var(--wh)}
+.st.c{color:var(--pu);border-color:var(--pu)}
+.st.x{color:var(--bad);border-color:var(--bad)}
+
+/* outcomes */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lane{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px}
+.lane>.lh{font-weight:700;font-size:14px;margin-bottom:6px}
+.lane .step{padding:6px 8px;font-size:13px}
+.lane .step .d{font-size:12.5px}
+.merge{text-align:center;color:var(--muted);font-size:13px;margin:8px 0 4px}
+.closebox{border:2px solid var(--pu);background:var(--pu-soft);border-radius:10px;padding:9px 11px}
+.closebox .t{font-weight:700;color:var(--pu)}
+.cancelbox{border:1.5px dashed var(--bad);background:var(--bad-soft);border-radius:10px;padding:9px 11px;margin-top:8px;font-size:13px}
+.cancelbox .t{font-weight:700;color:var(--bad)}
+.cancelbox ul{margin:3px 0 0;padding-left:18px}
+
+/* tables */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px 0;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-size:13px;color:var(--muted);font-weight:600;background:var(--surface-2)}
+td.y{color:var(--pu);font-weight:700;text-align:center}
+td.n{color:var(--muted);text-align:center}
+th.c{text-align:center}
+
+.where{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.where .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.where .card b{display:block;margin-bottom:2px}
+.where .card span{color:var(--muted);font-size:13px}
+footer{color:var(--muted);font-size:12.5px;margin-top:36px}
+
+@media (max-width:1020px){
+  .flow{grid-template-columns:1fr}
+  .bigarrow{transform:rotate(90deg);height:40px}
+  .bigarrow span{position:static}
+}
+@media (max-width:560px){ .lanes{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<main>
+  <h1>เคลมผู้ขาย — มาจากไหน แล้วไปไหนต่อ</h1>
+  <p class="lead">ใบเคลมผู้ขาย (เลข <code>CLM-…</code>) ใช้ตามของ RM/PK ที่รับเข้ามาแล้วมีปัญหาจากผู้ขาย มีหน้าเดียวกันสองเมนู:
+    <b>QA › เคลมผู้ขาย</b> (เปิด / แก้ข้อมูล / ปิด / ยกเลิก) และ <b>จัดซื้อ › เคลมผู้ขาย</b> (กรอกผลติดต่อผู้ขาย)</p>
+  <div class="legend">
+    <span class="r pu">จัดซื้อ</span><span class="r wh">คลัง</span><span class="r qc">QC</span><span class="r qa">QA</span><span class="r sys">ระบบทำให้เอง</span><span class="r ac">บัญชี</span>
+  </div>
+
+  <h2>ภาพรวม</h2>
+  <div class="flow">
+
+    <!-- ── ZONE 1: ต้นทาง ── -->
+    <section class="zone">
+      <h3>① ก่อนเข้าเมนูเคลม</h3>
+      <p class="zsub">เคลมเกิดได้ 2 ทาง และทั้งสองทางต้องมี <b>ใบรับเข้า (GR) ที่อ้าง PO</b> เป็นต้นทางเสมอ</p>
+
+      <div class="path">
+        <div class="ph">ทาง A · ระบบเปิดให้เอง <span class="tag">ปัญหาคุณภาพ</span></div>
+        <div class="step"><span class="r pu">จัดซื้อ</span> <span class="t">ใบสั่งซื้อ (PO)</span>
+          <div class="menu">จัดซื้อ › ใบสั่งซื้อ (PO)</div></div>
+        <div class="down">↓</div>
+        <div class="step"><span class="r wh">คลัง</span> <span class="t">รับเข้าสินค้า (GR) จาก PO</span>
+          <div class="d">ของเข้าพักที่ WH-QZ รอตรวจ</div>
+          <div class="menu">คลัง › รับเข้าสินค้า (GR)</div></div>
+        <div class="down">↓</div>
+        <div class="step"><span class="r qc">QC</span> <span class="t">ตรวจรับ → “ไม่ผ่าน”</span>
+          <div class="d">Lot ย้ายไป WH-RJ ทันที + กระดิ่งแจ้ง QA</div>
+          <div class="menu">QC › ตรวจรับ</div></div>
+        <div class="down">↓</div>
+        <div class="step"><span class="r qa">QA</span> <span class="t">Disposition เลือก “คืนผู้ขาย” หรือ “ขอของทดแทน”</span>
+          <div class="d">สองทางนี้ QA อนุมัติเองได้ ไม่ต้องรอ QA Manager</div>
+          <div class="menu">QA › Disposition</div></div>
+        <div class="down">↓ อนุมัติแล้ว</div>
+        <div class="step out"><span class="r sys">ระบบ</span> <span class="t">เปิดใบเคลมให้อัตโนมัติ + แจ้งกระดิ่งจัดซื้อ</span>
+          <div class="d">ประเภท = คุณภาพ · สิ่งที่ขอ = คืน / เปลี่ยน (ตาม Disposition) · ผู้ขาย, GR, สินค้า, Lot, จำนวน, เหตุผล QC เติมให้ครบ</div></div>
+        <div class="note">Disposition แบบ “ทำลาย” หรือ “รับแบบมีเงื่อนไข” <b>ไม่เปิดเคลม</b> · ถ้าตอนอนุมัติเปิดเคลมพลาด ระบบเปิดซ้ำให้อีกรอบตอนคลังกด “ดำเนินการแล้ว”</div>
+      </div>
+
+      <div class="path">
+        <div class="ph">ทาง B · QA เปิดเองจากบรรทัด GR <span class="tag">ขาดส่ง / เสียหาย</span></div>
+        <div class="step"><span class="r wh">คลัง</span> <span class="t">รับเข้าสินค้า (GR) จาก PO</span></div>
+        <div class="down">↓</div>
+        <div class="step"><span class="r qa">QA</span> <span class="t">เปิดหน้ารายละเอียด GR → ปุ่ม “เปิดเคลม” ที่บรรทัด</span>
+          <div class="d">หรือกด “เปิดเคลมจากใบรับเข้า” บนหน้า QA › เคลมผู้ขาย ซึ่งพาไปหน้ารายการ GR · ปุ่มโชว์เฉพาะคนที่มีสิทธิ์ QA จัดการ</div>
+          <div class="menu">คลัง › รับเข้าสินค้า (GR) › บรรทัด</div></div>
+        <div class="down">↓</div>
+        <div class="step out"><span class="r qa">QA</span> <span class="t">ฟอร์มเปิดเคลม → บันทึก</span>
+          <div class="d"><b>ขาดส่ง</b> — สั่งมากกว่ารับ · เคลมได้ไม่เกิน (สั่ง − รับ − ที่เคลมขาดส่งไปแล้ว)<br>
+            <b>เสียหาย</b> — เคลมได้ไม่เกิน (ยอดรับ − ที่เคลมเสียหาย/คุณภาพไปแล้ว)<br>
+            ผู้ขาย / สินค้า / Lot ดึงจากบรรทัด GR แก้ไม่ได้ · ระบบแจ้งกระดิ่งจัดซื้อ</div>
+          <div class="menu">/qa/claims/create?grLineId=…</div></div>
+        <div class="note bad">ปัญหา <b>คุณภาพ (QC ไม่ผ่าน)</b> เปิดเองไม่ได้ — ต้องไปทาง A ผ่าน Disposition เท่านั้น</div>
+      </div>
+    </section>
+
+    <div class="bigarrow" aria-hidden="true"><span>→</span></div>
+
+    <!-- ── ZONE 2: ใบเคลม ── -->
+    <section class="zone claim">
+      <h3>② ใบเคลม CLM</h3>
+      <p class="zsub">ใบเดียว แบ่ง 3 ส่วนตามคนรับผิดชอบ</p>
+      <div class="status">สถานะ: <span class="st p">รอดำเนินการ</span> → <span class="st c">เสร็จสิ้น</span> หรือ <span class="st x">ยกเลิก</span></div>
+
+      <div class="part">
+        <div class="pt"><span class="r qa">QA</span> ส่วนที่ 1 · ข้อมูลเคลม</div>
+        <ul>
+          <li>รายละเอียดปัญหา, ผล QC, สิ่งที่ขอจากผู้ขาย (คืน / เปลี่ยน / เครดิต / พักไว้ — ขาดส่งไม่มี “คืน”)</li>
+          <li>กำหนดได้คำตอบ: ตั้งต้น +7 วัน, เลื่อนได้ไม่เกิน 90 วันนับจากวันเปิด</li>
+          <li>อ้างอิง NCR ที่มีอยู่ หรือกด “สร้าง NCR จากเคลมนี้”</li>
+        </ul>
+      </div>
+      <div class="part">
+        <div class="pt"><span class="r pu">จัดซื้อ</span> ส่วนที่ 2 · ผลติดต่อผู้ขาย <span class="tag">QA กรอกแทนได้</span></div>
+        <ul>
+          <li>คำตอบผู้ขาย + วันที่ตอบ, ผู้ขายรับข้อเสนอไหม, ยอดเครดิตที่ตกลง</li>
+          <li>จัดซื้อเข้าทาง <b>จัดซื้อ › เคลมผู้ขาย</b> (ตัวกรอง “รอคำตอบผู้ขาย”) หรือจากกระดิ่ง “มีเคลมใหม่”</li>
+          <li>ไม่ได้คำตอบเกินกำหนด = ขึ้น <b>เกิน SLA</b> (ตัวกรอง + แดชบอร์ด QA)</li>
+        </ul>
+      </div>
+      <div class="part">
+        <div class="pt"><span class="r sys">ระบบ</span> ส่วนที่ 3 · ผลดำเนินการ</div>
+        <ul>
+          <li>ส่งคืนแล้ว (วันที่ + เลขอ้างอิง) · ได้ของทดแทน (GR ใบไหน) · Credit Note (เลข CRN + ยอด)</li>
+          <li>เติมเองจากงานของคลัง / QC / Credit Note — ดูช่อง ③ · ใบที่ QA เปิดเอง (ทาง B) QA กรอกวันที่ส่งคืนเองได้</li>
+        </ul>
+      </div>
+      <div class="note">ทุกการเปลี่ยนแปลงขึ้นไทม์ไลน์ของใบ · พิมพ์ / PDF ได้ที่ <code>/print/claims/:id</code></div>
+    </section>
+
+    <div class="bigarrow" aria-hidden="true"><span>→</span></div>
+
+    <!-- ── ZONE 3: ปลายทาง ── -->
+    <section class="zone">
+      <h3>③ เคลมแล้วไปไหนต่อ</h3>
+      <p class="zsub">แยกตาม “สิ่งที่ขอจากผู้ขาย” แล้วกลับมาปิดที่ใบเคลม</p>
+      <div class="lanes">
+        <div class="lane">
+          <div class="lh">คืน</div>
+          <div class="step"><span class="r wh">คลัง</span> <span class="t">งานจาก QA → “ดำเนินการแล้ว”</span>
+            <div class="d">ตัดสต๊อกออกจาก WH-RJ · เคลมขึ้น “ส่งคืนแล้ว” ให้เอง</div>
+            <div class="menu">คลัง › งานจาก QA</div></div>
+          <div class="note">ใบเปิดเอง: QA กรอกวันที่ส่งคืนในใบเคลม</div>
+        </div>
+        <div class="lane">
+          <div class="lh">เปลี่ยน</div>
+          <div class="step"><span class="r wh">คลัง</span> <span class="t">ส่งของเดิมคืน</span>
+            <div class="d">เหมือนช่อง “คืน” (ขาดส่งข้ามขั้นนี้)</div></div>
+          <div class="down">↓</div>
+          <div class="step"><span class="r wh">คลัง</span> <span class="t">GR ใหม่จาก PO เดิม</span>
+            <div class="d">ที่บรรทัดเลือก “ของทดแทนจากเคลม”</div></div>
+          <div class="down">↓</div>
+          <div class="step"><span class="r qc">QC</span> <span class="t">ตรวจรับของทดแทน</span>
+            <div class="d">ตัดสินแล้ว (ผ่านหรือไม่ผ่าน) = เคลมขึ้น “ได้รับของทดแทนแล้ว”</div></div>
+        </div>
+        <div class="lane">
+          <div class="lh">เครดิต</div>
+          <div class="step"><span class="r qa">QA</span>/<span class="r pu">จัดซื้อ</span> <span class="t">บันทึก Credit Note จากเคลม</span>
+            <div class="d">ยอดต้องไม่เกินเครดิตที่ตกลง · เคลมผูกเลข CRN</div></div>
+          <div class="down">↓</div>
+          <div class="step"><span class="r ac">บัญชี</span> <span class="t">คีย์ใน PEAK เอง</span>
+            <div class="d">ERP บันทึกอย่างเดียว ไม่ส่ง PEAK</div></div>
+        </div>
+        <div class="lane">
+          <div class="lh">พักไว้</div>
+          <div class="step"><span class="t">ไม่มีงานต่อ</span>
+            <div class="d">ขอแค่มีคำตอบผู้ขายก็ปิดได้</div></div>
+        </div>
+      </div>
+
+      <div class="merge">↓ ครบตามที่ขอแล้ว</div>
+      <div class="closebox">
+        <span class="r qa">QA</span> <span class="t">กด “ปิดเคลม” → เสร็จสิ้น</span>
+        <div class="d" style="font-size:13px;color:var(--muted)">ยังไม่ครบ ระบบไม่ให้ปิด และบอกว่าติดอะไร (ตารางด้านล่าง) · ปิดได้ทั้ง QA และหัวหน้า QA</div>
+      </div>
+      <div class="cancelbox">
+        <span class="t">ทางยกเลิก</span>
+        <ul>
+          <li><span class="r qa">QA</span> ยกเลิกเอง ต้องใส่เหตุผล — ยกเลิกไม่ได้ถ้ายังผูก Credit Note อยู่ หรือมี GR ของทดแทนที่รอ QC</li>
+          <li><span class="r sys">ระบบ</span> ยกเลิกตามเมื่อ Disposition ต้นทางถูกยกเลิก — เฉพาะเคลมที่ผู้ขายยังไม่มีความคืบหน้า ถ้ามีแล้ว ระบบไม่ให้ยกเลิก Disposition</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <h2>ปิดเคลมได้เมื่อไร</h2>
+  <p class="sub">ระบบเช็คตาม “สิ่งที่ขอจากผู้ขาย” — ช่องที่ติ๊กคือสิ่งที่ต้องมีก่อนกด “ปิดเคลม”</p>
+  <div class="panel">
+    <table>
+      <thead><tr><th>สิ่งที่ขอ</th><th class="c">คำตอบผู้ขาย</th><th class="c">ส่งของคืนแล้ว</th><th class="c">ได้ของทดแทน (มี GR)</th><th class="c">มี Credit Note</th></tr></thead>
+      <tbody>
+        <tr><td><b>คืน</b></td><td class="y">✓</td><td class="y">✓</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><td><b>เปลี่ยน</b></td><td class="y">✓</td><td class="y">✓ <span style="font-weight:400;color:var(--muted)">(ขาดส่งไม่ต้อง)</span></td><td class="y">✓</td><td class="n">—</td></tr>
+        <tr><td><b>เครดิต</b></td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td><b>พักไว้</b></td><td class="y">✓</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>เคลมไปโผล่ที่ไหนอีก</h2>
+  <p class="sub">ใบเคลมใบเดียวกันมีลิงก์ / ป้ายสถานะแสดงในหน้าอื่น ๆ เหล่านี้</p>
+  <div class="where">
+    <div class="card"><b>จัดซื้อ › ใบสั่งซื้อ (PO)</b><span>ป้ายเคลมที่บรรทัด PO คำนวณจากใบเคลม: รอผลเคลม · ได้ของทดแทนแล้ว · ได้เครดิตแล้ว · ปิดเคลมแล้ว (แก้มือไม่ได้)</span></div>
+    <div class="card"><b>คลัง › รับเข้าสินค้า (GR)</b><span>บรรทัดต้นทางมีปุ่ม “เปิดเคลม” (ทาง B) · บรรทัดของทดแทนแสดง “ของทดแทนจากเคลม CLM-…” ลิงก์ไปใบเคลม</span></div>
+    <div class="card"><b>QA › Disposition</b><span>ใบคืนผู้ขาย / ขอของทดแทนที่อนุมัติแล้ว มีลิงก์ไปใบเคลมที่เปิดให้</span></div>
+    <div class="card"><b>QC › ของไม่ผ่าน (NC)</b><span>Lot ที่ไม่ผ่านแสดงเลข CLM ที่เกี่ยวข้อง</span></div>
+    <div class="card"><b>QA › NCR</b><span>เคลมอ้างอิง NCR ได้ 1 ใบ หรือสร้าง NCR ใหม่จากเคลม (ข้อมูลผู้ขาย / Lot / จำนวนเติมให้)</span></div>
+    <div class="card"><b>แดชบอร์ด QA + กระดิ่ง</b><span>ตัวเลขเคลมรอดำเนินการ / เกิน SLA · กระดิ่งจัดซื้อเด้งทุกครั้งที่มีเคลมใหม่</span></div>
+  </div>
+
+  <footer>อ้างอิงโค้ด ณ 2 พ.ย. 2569: <code>apps/api/internal/domain/qa_claim.go</code> · <code>usecase/supplier_claim_usecase.go</code> · <code>usecase/qa_task_usecase.go</code> · <code>repository/gr_replacement_claim.go</code> · <code>domain/qa_claim_po.go</code> · <code>domain/qa_credit_note.go</code></footer>
+</main>
+</body>
+</html>

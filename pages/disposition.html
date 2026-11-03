@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เส้นทาง Lot ไม่ผ่าน — ก่อนและหลัง Disposition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9; --card: #fff; --ink: #1d2433; --muted: #6b7385; --line: #d9dee7;
+    --brand: #0aa5d0; --brand-soft: #e3f5fb;
+    --wh: #7c5cff; --wh-soft: #efeaff;
+    --qc: #0aa5d0; --qa: #e0882b; --qa-soft: #fdf1e3;
+    --ok: #1f9d55; --ok-soft: #e5f6ec;
+    --bad: #d64545; --bad-soft: #fde9e9;
+    --warn: #c98a00; --warn-soft: #fff5d6;
+    --rj: #8a1c1c; --rj-soft: #f6dede;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif; font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 56px; }
+  header h1 { margin: 0 0 4px; font-size: 26px; }
+  header p { margin: 0; color: var(--muted); }
+  .toc { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 8px; }
+  .toc a { text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--line);
+    padding: 6px 14px; border-radius: 999px; font-weight: 500; }
+  .toc a b { color: var(--brand); margin-right: 6px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-top: 22px; }
+  section > h2 { margin: 0 0 4px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  section > h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--brand); color: #fff; font-size: 15px; }
+  section > .sub { color: var(--muted); margin: 0 0 20px; }
+
+  /* lanes */
+  .lanes { display: grid; grid-template-columns: 1fr 1.25fr; gap: 22px; }
+  .lane { border: 1px dashed var(--line); border-radius: 14px; padding: 16px; background: #fbfcfe; }
+  .lane h3 { margin: 0 0 14px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .lane h3 .tag { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: #fff; }
+
+  .step { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--brand);
+    border-radius: 10px; padding: 10px 14px; }
+  .step.wh { border-left-color: var(--wh); }
+  .step.qc { border-left-color: var(--qc); }
+  .step.qa { border-left-color: var(--qa); }
+  .step.prod { border-left-color: #5b6475; }
+  .step.goal { border: 2px solid var(--qa); border-left-width: 2px; background: var(--qa-soft); text-align: center; font-weight: 600; }
+  .step.done { border: 2px solid var(--ok); border-left-width: 2px; background: var(--ok-soft); text-align: center; font-weight: 600; }
+  .step .who { font-size: 12px; font-weight: 600; letter-spacing: .2px; }
+  .step.wh .who { color: var(--wh); } .step.qc .who { color: var(--qc); } .step.qa .who { color: var(--qa); }
+  .step.prod .who { color: #5b6475; }
+  .step .what { font-weight: 600; }
+  .step .menu { font-size: 12.5px; color: var(--muted); }
+  .step .note { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .down { text-align: center; color: #9aa3b2; font-size: 18px; line-height: 1; padding: 5px 0; }
+  .down small { display: block; font-size: 12px; color: var(--muted); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .split3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .br { border-radius: 10px; padding: 9px 12px; font-size: 13.5px; }
+  .br .lbl { font-size: 12px; font-weight: 700; display: block; margin-bottom: 2px; }
+  .br.pass { background: var(--ok-soft); border: 1px solid #bfe6cf; }
+  .br.pass .lbl { color: var(--ok); }
+  .br.fail { background: var(--bad-soft); border: 1px solid #f3c4c4; }
+  .br.fail .lbl { color: var(--bad); }
+  .br.warn { background: var(--warn-soft); border: 1px solid #f1dc9a; }
+  .br.warn .lbl { color: var(--warn); }
+
+  .chip { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+    border: 1px solid transparent; white-space: nowrap; vertical-align: 1px; }
+  .c-pend { background: var(--warn-soft); color: var(--warn); border-color: #f1dc9a; }
+  .c-pass { background: var(--brand-soft); color: #08799a; border-color: #b8e4f2; }
+  .c-rel { background: var(--ok-soft); color: var(--ok); border-color: #bfe6cf; }
+  .c-hold { background: var(--bad-soft); color: var(--bad); border-color: #f3c4c4; }
+  .c-rj { background: var(--rj-soft); color: var(--rj); border-color: #e7b4b4; }
+
+  .need { margin-top: 10px; font-size: 13px; background: var(--qa-soft); border: 1px solid #f3d3ad;
+    border-radius: 10px; padding: 8px 12px; }
+  .need b { color: var(--qa); }
+
+  .merge { margin-top: 18px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 22px; text-align: center; }
+  .merge div { color: #9aa3b2; font-size: 18px; }
+
+  /* part 2 */
+  .center { max-width: 640px; margin: 0 auto; }
+  .gate { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* part 3 */
+  .outcomes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .oc { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .oc .hd { padding: 10px 14px; font-weight: 700; color: #fff; }
+  .oc .hd small { display: block; font-weight: 500; opacity: .9; font-size: 12px; }
+  .oc .bd { padding: 12px 14px; font-size: 13.5px; flex: 1; }
+  .oc .bd ol { margin: 0; padding-left: 18px; }
+  .oc .bd li { margin-bottom: 4px; }
+  .oc .ft { padding: 8px 14px; font-size: 12.5px; font-weight: 600; border-top: 1px solid var(--line); background: #fafbfd; }
+  .h-claim { background: #3a7bd5; } .h-rework { background: #7c5cff; } .h-reject { background: #b23b3b; }
+  .h-end { background: #4b5566; }
+  .loop { color: var(--rj); } .newlot { color: #6a4ce0; } .end { color: var(--ok); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f7f9fc; font-size: 13px; color: var(--muted); font-weight: 600; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px 22px; font-size: 13.5px; }
+  .legend span { display: inline-flex; gap: 6px; align-items: center; }
+  .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+  .notes { margin: 0; padding-left: 20px; }
+  .notes li { margin-bottom: 6px; }
+  footer { margin-top: 18px; color: var(--muted); font-size: 12.5px; }
+  code { font-size: 12px; background: #eef1f6; padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .lanes, .merge, .outcomes { grid-template-columns: 1fr; }
+    .merge div:first-child { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>เส้นทางของ Lot ที่ไม่ผ่าน — ก่อนและหลัง Disposition</h1>
+  <p>BioSierra ERP · ไล่จากโค้ดระบบจริง ณ 2 พ.ย. 2569</p>
+  <nav class="toc">
+    <a href="#before"><b>1</b>ก่อนเข้า Disposition</a>
+    <a href="#decide"><b>2</b>ตัดสินแล้วไปไหน</a>
+    <a href="#after"><b>3</b>ปลายทางแต่ละแบบ</a>
+    <a href="#legend"><b>i</b>สีและสถานะ</a>
+  </nav>
+</header>
+
+<!-- ───────────── 1 ───────────── -->
+<section id="before">
+  <h2><span class="n">1</span>ก่อนเข้า Disposition — ของมาถึงคิวได้ยังไง</h2>
+  <p class="sub">มี 2 ทาง: วัตถุดิบ/บรรจุภัณฑ์ที่ซื้อเข้ามา (RM/PK) และสินค้าสำเร็จรูปที่ผลิตเอง (FG)</p>
+
+  <div class="lanes">
+    <!-- RM / PK -->
+    <div class="lane">
+      <h3><span class="tag">RM / PK</span>วัตถุดิบ · บรรจุภัณฑ์</h3>
+
+      <div class="step wh">
+        <div class="who">คลัง</div>
+        <div class="what">รับของจากผู้ขาย</div>
+        <div class="menu">เมนู คลัง › รับเข้าสินค้า (GR)</div>
+        <div class="note">ของเข้าโซนกักรอตรวจ (WH-QZ) <span class="chip c-pend">รอตรวจ</span></div>
+      </div>
+      <div class="down">↓</div>
+
+      <div class="step qc">
+        <div class="who">QC</div>
+        <div class="what">ตรวจรับ</div>
+        <div class="menu">เมนู QC › ตรวจรับ</div>
+      </div>
+      <div class="down">↓</div>
+
+      <div class="split">
+        <div class="br pass"><span class="lbl">✓ ผ่าน</span>ย้ายเข้าคลัง WH-RM / WH-PK <span class="chip c-rel">ใช้ได้</span><br>→ เบิกไปผลิตได้ จบ</div>
+        <div class="br fail"><span class="lbl">✗ ไม่ผ่าน</span>ย้ายเข้าคลังของเสีย WH-RJ <span class="chip c-rj">ไม่ผ่าน</span></div>
+      </div>
+
+      <div class="need"><b>ไม่ต้องเปิด NCR</b> — Lot ที่ไม่ผ่านขึ้นคิว Disposition แท็บ RM/PK ให้ทันที</div>
+    </div>
+
+    <!-- FG -->
+    <div class="lane">
+      <h3><span class="tag">FG</span>สินค้าสำเร็จรูป</h3>
+
+      <div class="step prod">
+        <div class="who">ฝ่ายผลิต → คลัง</div>
+        <div class="what">ผลิตเสร็จ คลังรับเข้า ได้เลข FG Lot</div>
+        <div class="menu">เมนู คลัง › รับ FG เข้าคลัง</div>
+        <div class="note">เช่น SS001-001-261102-2 <span class="chip c-pend">รอ QC</span></div>
+      </div>
+      <div class="down">↓</div>
+
+      <div class="step qc">
+        <div class="who">QC</div>
+        <div class="what">บันทึกผลตรวจ FG</div>
+        <div class="menu">เมนู QC › สถานะ Lot</div>
+      </div>
+      <div class="down">↓</div>
+      <div class="split">
+        <div class="br pass"><span class="lbl">✓ ผ่าน</span><span class="chip c-pass">QC ผ่าน</span> แต่ยังส่งของไม่ได้ ต้องรอ QA</div>
+        <div class="br fail"><span class="lbl">✗ ไม่ผ่าน</span><span class="chip c-hold">Hold</span> ไปรอ Disposition</div>
+      </div>
+      <div class="down">↓ <small>เฉพาะที่ QC ผ่าน</small></div>
+
+      <div class="step qa">
+        <div class="who">QA</div>
+        <div class="what">ปล่อย Batch</div>
+        <div class="menu">เมนู QA › ปล่อย Batch</div>
+      </div>
+      <div class="down">↓</div>
+      <div class="split">
+        <div class="br pass"><span class="lbl">✓ ปล่อย</span><span class="chip c-rel">ปล่อยแล้ว</span> ส่งของ (DO) ได้ จบ</div>
+        <div class="br fail"><span class="lbl">✗ ไม่ปล่อย</span><span class="chip c-hold">Hold</span> ไปรอ Disposition</div>
+      </div>
+
+      <div class="down">+</div>
+      <div class="br warn"><span class="lbl">⚠ อีกทาง: Recall</span>
+        เมื่อ Recall อนุมัติ (QA › ข้อร้องเรียน / Recall) Lot ที่ยังไม่ Hold จะถูกเปลี่ยนเป็น <span class="chip c-hold">Hold</span> หมด
+        ไม่ว่าตอนนั้นจะ รอ QC / QC ผ่าน หรือปล่อยแล้วก็ตาม</div>
+
+      <div class="need"><b>ต้องมี NCR ก่อนกดตัดสิน</b> — Lot ที่ Hold ขึ้นคิวแท็บ FG ทันที แต่ QA จะกดตัดสินได้ก็ต่อเมื่อมี NCR ของ Lot นั้นที่ยังเปิดอยู่ (QA › NCR)</div>
+    </div>
+  </div>
+
+  <div class="merge"><div>↓</div><div>↓</div></div>
+  <div class="center">
+    <div class="step goal">คิว Disposition &nbsp;·&nbsp; เมนู QA › Disposition</div>
+  </div>
+</section>
+
+<!-- ───────────── 2 ───────────── -->
+<section id="decide">
+  <h2><span class="n">2</span>ตัดสินแล้วไปไหน</h2>
+  <p class="sub">QA ตัดสินเท่านั้น ส่วนการย้ายของหรือตัดสต๊อกเป็นงานของคลัง</p>
+
+  <div class="center">
+    <div class="step qa">
+      <div class="who">QA</div>
+      <div class="what">กดตัดสิน เลือกการจัดการ + จำนวน + เหตุผล</div>
+      <div class="menu">เมนู QA › Disposition</div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="gate">
+      <div class="br warn"><span class="lbl">เลือก "ทำลาย" หรือ "รับแบบมีเงื่อนไข" และคนกดไม่ใช่ QA Manager</span>
+        ต้องรอ <b>QA Manager อนุมัติ</b> ก่อน</div>
+      <div class="br pass"><span class="lbl">การจัดการอื่น (หรือ QA Manager ตัดสินเอง)</span>
+        ไปขั้นถัดไปเลย</div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="step wh">
+      <div class="who">คลัง</div>
+      <div class="what">กด "ดำเนินการ" ระบบย้ายหรือตัดสต๊อกตามที่ QA ตัดสิน</div>
+      <div class="menu">เมนู คลัง › งานจาก QA</div>
+      <div class="note">คืนผู้ขาย / ขอของทดแทน ต้องกรอกเลขเอกสารอ้างอิง · ทำลาย ต้องแนบใบรับรองการทำลาย</div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="step done">ใบตัดสินเป็น "เสร็จ"</div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin:10px 0 0">ยกเลิกใบได้ทุกขั้นจนกว่าใบจะเป็น "เสร็จ"</p>
+  </div>
+</section>
+
+<!-- ───────────── 3 ───────────── -->
+<section id="after">
+  <h2><span class="n">3</span>ปลายทางของแต่ละการจัดการ</h2>
+  <p class="sub">หลังคลังดำเนินการเสร็จ</p>
+
+  <div class="outcomes">
+    <div class="oc">
+      <div class="hd h-claim">คืนผู้ขาย / ขอของทดแทน<small>RM / PK</small></div>
+      <div class="bd"><ol>
+        <li>คลังตัดของออกจาก WH-RJ</li>
+        <li>ระบบ<b>เปิดเคลมผู้ขายให้เอง</b>ตั้งแต่ตอนอนุมัติ</li>
+        <li>ขอของทดแทน: ของใหม่เข้าทางรับเข้าสินค้า (GR) แล้วตรวจรับตามปกติ</li>
+      </ol></div>
+      <div class="ft">ตามต่อที่ QA › เคลมผู้ขาย</div>
+    </div>
+
+    <div class="oc">
+      <div class="hd h-rework">Rework<small>FG</small></div>
+      <div class="bd"><ol>
+        <li>คลังตัดของออกจาก WH-FG ส่งกลับฝ่ายผลิต</li>
+        <li>ฝ่ายผลิตทำใหม่</li>
+        <li>คลังรับเข้าที่ "รับ FG เข้าคลัง" แบบรับจาก Rework</li>
+        <li>ได้ <b>FG Lot ใหม่</b> ต้องผ่าน QC และ QA ปล่อยใหม่ทั้งหมด</li>
+      </ol></div>
+      <div class="ft newlot">↺ กลับไปเริ่มที่ข้อ 1 (ทาง FG) ด้วย Lot ใหม่</div>
+    </div>
+
+    <div class="oc">
+      <div class="hd h-reject">Reject<small>FG · ต้องทั้ง Lot</small></div>
+      <div class="bd"><ol>
+        <li>คลังย้ายทั้ง Lot จาก WH-FG ไป WH-RJ</li>
+        <li>สถานะเป็น <span class="chip c-rj">Reject</span></li>
+        <li>Lot <b>กลับเข้าคิว Disposition</b> ตัดสินรอบสอง เลือกได้แค่ "ทำลาย"</li>
+      </ol></div>
+      <div class="ft loop">↺ กลับไปข้อ 2 → ทำลาย</div>
+    </div>
+
+    <div class="oc">
+      <div class="hd h-end">ทำลาย / รับแบบมีเงื่อนไข<small>ทำลาย: ทุกชนิด · รับแบบมีเงื่อนไข: RM/PK</small></div>
+      <div class="bd"><ol>
+        <li><b>ทำลาย</b>: คลังตัดของออก แนบใบรับรองการทำลาย</li>
+        <li><b>รับแบบมีเงื่อนไข</b> (ทั้ง Lot): ย้ายจาก WH-RJ กลับเข้าคลังจัดเก็บ ใช้ผลิตได้ Lot ถูกติดเลขใบตัดสินไว้ให้รู้ว่ารับแบบมีเงื่อนไข</li>
+      </ol></div>
+      <div class="ft end">✓ จบ</div>
+    </div>
+  </div>
+
+  <h3 style="margin:26px 0 8px;font-size:16px">สรุปเป็นตาราง</h3>
+  <table>
+    <thead><tr><th>ชนิด</th><th>การจัดการ</th><th>ใครอนุมัติ</th><th>คลังทำอะไร</th><th>ไปต่อที่ไหน</th></tr></thead>
+    <tbody>
+      <tr><td>RM/PK</td><td>คืนผู้ขาย</td><td>QA</td><td>ตัดของออก + เลขเอกสาร</td><td>เคลมผู้ขาย (เปิดให้เอง)</td></tr>
+      <tr><td>RM/PK</td><td>ขอของทดแทน</td><td>QA</td><td>ตัดของออก + เลขเอกสาร</td><td>เคลมผู้ขาย → ของใหม่เข้า GR</td></tr>
+      <tr><td>RM/PK</td><td>ทำลาย</td><td>QA Manager</td><td>ตัดของออก + ใบรับรองการทำลาย</td><td>จบ</td></tr>
+      <tr><td>RM/PK</td><td>รับแบบมีเงื่อนไข</td><td>QA Manager</td><td>ย้าย WH-RJ → คลังจัดเก็บ (ทั้ง Lot)</td><td>ใช้ผลิตได้</td></tr>
+      <tr><td>FG</td><td>Rework</td><td>QA</td><td>ตัดของออกจาก WH-FG</td><td>ผลิตใหม่ → รับ FG → Lot ใหม่</td></tr>
+      <tr><td>FG</td><td>Reject</td><td>QA</td><td>ย้ายทั้ง Lot → WH-RJ</td><td>กลับคิว Disposition เพื่อทำลาย</td></tr>
+      <tr><td>FG</td><td>ทำลาย</td><td>QA Manager</td><td>ตัดของออก + ใบรับรองการทำลาย</td><td>จบ</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ───────────── legend ───────────── -->
+<section id="legend">
+  <h2><span class="n">i</span>สีและสถานะ</h2>
+  <p class="sub">สีแถบซ้ายของกล่องบอกว่าใครเป็นคนทำ ป้ายสีบอกสถานะของ Lot</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--wh)"></i>คลัง</span>
+    <span><i class="sw" style="background:var(--qc)"></i>QC</span>
+    <span><i class="sw" style="background:var(--qa)"></i>QA</span>
+    <span><i class="sw" style="background:#5b6475"></i>ฝ่ายผลิต</span>
+  </div>
+  <div class="legend" style="margin-top:12px">
+    <span><span class="chip c-pend">รอตรวจ / รอ QC</span></span>
+    <span><span class="chip c-pass">QC ผ่าน</span> รอ QA ปล่อย</span>
+    <span><span class="chip c-rel">ใช้ได้ / ปล่อยแล้ว</span></span>
+    <span><span class="chip c-hold">Hold</span> FG รอตัดสิน</span>
+    <span><span class="chip c-rj">ไม่ผ่าน / Reject</span> อยู่คลังของเสีย WH-RJ</span>
+  </div>
+
+  <h3 style="margin:22px 0 8px;font-size:16px">ข้อสังเกต</h3>
+  <ul class="notes">
+    <li><b>Rework ไม่ได้สร้างงานให้ฝ่ายผลิตอัตโนมัติ</b> — ระบบแค่ตัดของออกจากคลัง ส่วนแผนผลิตรับงาน Rework ได้เฉพาะจาก CR ที่ฝ่ายขายเปิด ระหว่างของออกจากคลังจนถึงตอนรับ FG กลับเข้ามา ระบบจึงไม่ได้ติดตามว่าฝ่ายผลิตรับงานไปแล้วหรือยัง</li>
+    <li>ยังไม่ได้ตรวจว่าเมื่อใบตัดสินเสร็จแล้ว NCR ของ Lot ปิดเองหรือต้องปิดด้วยมือ</li>
+    <li>ผลตรวจระหว่างผลิต (QC › ตรวจระหว่างผลิต) ไม่ได้ทำให้ Lot เข้าคิว Disposition — คิวรับเฉพาะ Lot ที่ไม่ผ่านตามข้อ 1</li>
+  </ul>
+</section>
+
+<footer>
+  ที่มา: <code>domain/qa_disposition.go</code> (ใครตัดสินอะไรได้) · <code>domain/qa_disposition_exec.go</code> (คลังทำอะไร) ·
+  <code>domain/fg_lot.go</code> + <code>usecase/fg_lot_usecase.go</code> (สถานะ FG) · <code>repository/qa_disposition_repository.go</code> (เงื่อนไขเข้าคิว)
+</footer>
+
+</div>
+</body>
+</html>
